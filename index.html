@@ -83,7 +83,13 @@
     background:#FBFAF7;border:1px solid var(--line);border-radius:10px;padding:12px 14px;outline:none;
   }
   textarea:focus{border-color:#AEB8C2}
-  .hint{font-size:12px;color:var(--sub);margin-top:8px}
+  .hint{font-size:12px;color:var(--sub)}
+  .memo-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px}
+  .link-btn{font-family:inherit;font-size:12px;color:var(--accent);background:none;border:none;cursor:pointer;padding:0}
+  .link-btn:hover{text-decoration:underline}
+  .sync-form{display:flex;gap:6px;margin-top:8px}
+  .sync-form[hidden]{display:none}
+  .sync-form input{flex:1;min-width:0;font-family:inherit;font-size:13px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:#FBFAF7;color:var(--text);outline:none}
   .wx-links{display:flex;flex-direction:column;gap:10px}
   .wx{
     display:flex;justify-content:space-between;align-items:center;
@@ -195,7 +201,15 @@
         <a class="btn" id="calBtn" href="https://www.icloud.com/calendar/" target="_blank" rel="noopener noreferrer">iCloud 캘린더 열기 ↗</a>
       </div>
       <textarea id="memo" placeholder="오늘 일정이나 할 일을 적어 두세요.&#10;예) 10:00 주간 회의&#10;19:30 공연 관람"></textarea>
-      <div class="hint" id="memo-hint">이 브라우저에 자동 저장돼요.</div>
+      <div class="memo-foot">
+        <span class="hint" id="memo-hint">이 브라우저에 자동 저장돼요.</span>
+        <button class="link-btn" id="syncBtn" type="button" hidden>동기화 연결</button>
+      </div>
+      <form class="sync-form" id="syncForm" hidden>
+        <input type="password" id="syncKey" placeholder="비밀 키 입력" autocomplete="off">
+        <button class="btn" type="submit">연결</button>
+        <button class="btn plain" type="button" id="syncCancel">취소</button>
+      </form>
     </div>
 
     <div class="stack">
@@ -313,12 +327,64 @@
     del(k){ try{ localStorage.removeItem(k); }catch(e){} }
   };
 
-  /* 오늘 메모 */
-  const memo=document.getElementById('memo');
-  const MEMO_KEY='today-dashboard-memo';
+  /* 오늘 메모: 이 브라우저에 저장 + (연결 시) 내 구글 시트로 PC·아이폰 동기화 */
+  const SYNC_URL='https://script.google.com/macros/s/AKfycbzkBzs0wxUknlyCBEVDksKekJ3B3nWNFW7sMWXphG6y3HLTNw4jxorupwCAmw-CltcTNQ/exec';   // Apps Script 웹 앱 주소 (비밀 키 없이는 읽기·쓰기 불가)
+  const memo=document.getElementById('memo'), hint=document.getElementById('memo-hint');
+  const syncBtn=document.getElementById('syncBtn'), syncForm=document.getElementById('syncForm'), syncKeyIn=document.getElementById('syncKey');
+  const MEMO_KEY='today-dashboard-memo', SKEY='memo-sync-key';
   const saved=store.get(MEMO_KEY); if(saved) memo.value=saved;
-  if(!store.set('__t','1')) document.getElementById('memo-hint').textContent='이 화면에서는 메모가 저장되지 않아요.';
-  let t; memo.addEventListener('input',()=>{ clearTimeout(t); t=setTimeout(()=>store.set(MEMO_KEY,memo.value),400); });
+  const canStore=store.set('__t','1');
+  if(!canStore) hint.textContent='이 화면에서는 메모가 저장되지 않아요.';
+  let dirty=false, saveTimer=null, busy=false;
+  const hm=d=>{const x=d?new Date(d):new Date();return String(x.getHours()).padStart(2,'0')+':'+String(x.getMinutes()).padStart(2,'0');};
+  const key=()=>store.get(SKEY);
+  async function call(body){
+    const r=await fetch(SYNC_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({key:key()},body))});
+    return r.json();
+  }
+  function handleErr(res){
+    if(res&&res.error==='key'){ store.del(SKEY); hint.textContent='비밀 키가 맞지 않아요. 다시 연결해 주세요.'; syncBtn.hidden=false; }
+    else if(res&&res.error==='locked'){ hint.textContent='잠시 후 다시 시도해 주세요. (잠금 10분)'; }
+    else hint.textContent='동기화 실패 · 이 기기에만 저장됨';
+  }
+  async function load(){
+    if(!SYNC_URL||!key()||busy||dirty) return;
+    busy=true;
+    try{
+      const res=await call({action:'load'});
+      if(res.ok){ if(!dirty){ memo.value=res.text; store.set(MEMO_KEY,res.text); } hint.textContent='동기화됨 · '+(res.updated?hm(res.updated)+' 저장본':'아직 저장된 메모 없음'); }
+      else handleErr(res);
+    }catch(e){ hint.textContent='동기화 실패 · 이 기기에만 저장됨'; }
+    busy=false;
+  }
+  async function save(){
+    if(!SYNC_URL||!key()) return;
+    hint.textContent='저장 중…';
+    try{
+      const res=await call({action:'save',text:memo.value});
+      if(res.ok){ dirty=false; hint.textContent='동기화됨 · '+hm(res.updated)+' 저장'; }
+      else handleErr(res);
+    }catch(e){ hint.textContent='동기화 실패 · 이 기기에만 저장됨'; }
+  }
+  memo.addEventListener('input',()=>{
+    dirty=true; store.set(MEMO_KEY,memo.value);
+    if(SYNC_URL&&key()){ clearTimeout(saveTimer); saveTimer=setTimeout(save,1500); }
+  });
+  if(SYNC_URL){
+    if(key()) load(); else { syncBtn.hidden=false; if(canStore) hint.textContent='이 기기에만 저장 중'; }
+    document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') load(); });
+    setInterval(()=>{ if(document.activeElement!==memo) load(); },5*60*1000);
+  }
+  syncBtn.addEventListener('click',()=>{ syncForm.hidden=false; syncBtn.hidden=true; syncKeyIn.focus(); });
+  document.getElementById('syncCancel').addEventListener('click',()=>{ syncForm.hidden=true; syncBtn.hidden=false; });
+  syncForm.addEventListener('submit',e=>{
+    e.preventDefault();
+    const k=syncKeyIn.value.trim(); if(!k) return;
+    if(!store.set(SKEY,k)){ hint.textContent='이 브라우저는 키를 기억할 수 없어요.'; return; }
+    syncKeyIn.value=''; syncForm.hidden=true;
+    const local=memo.value; dirty=false;
+    load().then(()=>{ if(!memo.value&&local){ memo.value=local; dirty=true; save(); } });
+  });
 
   /* 아이콘 그리기 */
   const iconKey=k=>'icon-'+k;
