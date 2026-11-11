@@ -101,8 +101,8 @@
   .panel.schedule textarea{flex:1}
   .song{flex:1}
   .song-genre{font-size:11px;color:var(--accent);letter-spacing:.04em;margin-bottom:2px}
-  .tag-link{text-decoration:none}
-  .tag-link:hover{color:var(--accent);text-decoration:underline}
+  .title-wrap{display:flex;align-items:center;gap:10px}
+  .btn.btn-sm{font-size:12px;padding:4px 10px;border-radius:7px}
   .song-title{font-size:17px;font-weight:500;letter-spacing:-.01em}
   .song-artist{font-size:13px;color:var(--sub);margin-top:2px}
   .song-why{font-size:13px;color:var(--text);margin-top:8px;line-height:1.6}
@@ -202,8 +202,11 @@
       <!-- 위: 오늘의 음악 (MUSIC-START ~ MUSIC-END 구간만 매일 교체) -->
       <div class="panel half music">
         <div class="panel-head">
-          <div class="panel-title">오늘의 음악</div>
-          <a class="tag tag-link" id="musicDate" href="https://docs.google.com/spreadsheets/d/1HNZZJ_zn6vBGPK6YnlUecdr2PlmgllZYfaFaW7z1zo4/edit" target="_blank" rel="noopener noreferrer" title="지난 곡 기록 보기">2026.11.11</a>
+          <div class="title-wrap">
+            <div class="panel-title">오늘의 음악</div>
+            <a class="btn btn-sm" href="https://docs.google.com/spreadsheets/d/1HNZZJ_zn6vBGPK6YnlUecdr2PlmgllZYfaFaW7z1zo4/edit" target="_blank" rel="noopener noreferrer">음악 기록 ↗</a>
+          </div>
+          <div class="tag" id="musicDate">2026.11.11</div>
         </div>
         <!--MUSIC-START-->
         <div class="song">
