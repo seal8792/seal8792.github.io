@@ -155,7 +155,7 @@
   }
   .row input[type=text]:focus{border-color:#AEB8C2}
   .modal-foot{display:flex;justify-content:space-between;margin-top:22px;padding-top:16px;border-top:1px solid var(--line)}
-  .msg{font-size:12px;color:#A86A64;margin-top:6px;min-height:16px}
+  .msg{font-size:12px;color:var(--accent);margin-top:6px;min-height:16px}
 </style>
 </head>
 <body>
@@ -352,7 +352,7 @@
     busy=true;
     try{
       const res=await call({action:'load'});
-      if(res.ok){ if(!dirty){ memo.value=res.text; store.set(MEMO_KEY,res.text); } hint.textContent='동기화됨 · '+(res.updated?hm(res.updated)+' 저장본':'아직 저장된 메모 없음'); }
+      if(res.ok){ if(!dirty){ memo.value=res.text; store.set(MEMO_KEY,res.text); } hint.textContent='동기화됨 · '+(res.updated?hm(res.updated)+' 저장본':'아직 저장된 메모 없음'); applyServerIcons(res.icons); }
       else handleErr(res);
     }catch(e){ hint.textContent='동기화 실패 · 이 기기에만 저장됨'; }
     busy=false;
@@ -407,6 +407,26 @@
   }
   paintAll();
 
+  /* 아이콘 동기화: 구글 시트 '아이콘' 탭 (빈 값 = 기본 아이콘으로 되돌림) */
+  const syncOn=()=>!!(SYNC_URL&&key());
+  async function pushIcon(name,data){
+    if(!syncOn()) return false;
+    try{ const r=await call({action:'icon_save',name:name,data:data}); return !!(r&&r.ok); }catch(e){ return false; }
+  }
+  function applyServerIcons(icons){
+    if(!icons) return;
+    document.querySelectorAll('.link').forEach(a=>{
+      const k=a.dataset.key;
+      if(Object.prototype.hasOwnProperty.call(icons,k)){
+        if(icons[k]) store.set(iconKey(k),icons[k]); else store.del(iconKey(k));
+      }else{
+        const local=store.get(iconKey(k));
+        if(local) pushIcon(k,local);   // 이 기기에만 있던 아이콘을 처음 한 번 올림
+      }
+    });
+    paintAll();
+  }
+
   /* 편집 모드 */
   const toggle=document.getElementById('editToggle');
   toggle.addEventListener('click',()=>{
@@ -433,10 +453,18 @@
     });
   });
 
+  async function syncIconMsg(name,data){
+    if(!syncOn()){ msg.textContent='이 기기에만 저장됐어요. (동기화 연결 시 다른 기기에도 반영)'; return; }
+    msg.textContent='다른 기기에도 저장 중…';
+    const ok=await pushIcon(name,data);
+    msg.textContent= ok ? '모든 기기에 저장됐어요.' : '다른 기기 저장에 실패했어요. 이 기기에는 저장됐어요.';
+  }
   function saveIcon(data){
-    const ok=store.set(iconKey(current.key), JSON.stringify(data));
+    const name=current.key, json=JSON.stringify(data);
+    const ok=store.set(iconKey(name), json);
     paintBadge(preview,data); paintBadge(current.badge,data);
-    msg.textContent= ok ? '' : '이 화면에서는 저장되지 않아 새로고침하면 원래대로 돌아가요.';
+    if(!ok){ msg.textContent='이 화면에서는 저장되지 않아 새로고침하면 원래대로 돌아가요.'; return; }
+    syncIconMsg(name,json);
   }
 
   document.getElementById('mPick').addEventListener('click',()=>fileIn.click());
@@ -451,7 +479,9 @@
       const s=Math.min(img.width,img.height), sx=(img.width-s)/2, sy=(img.height-s)/2;
       c.getContext('2d').drawImage(img,sx,sy,s,s,0,0,S,S);
       URL.revokeObjectURL(url);
-      saveIcon({type:'img', value:c.toDataURL('image/png')});
+      let dataUrl=c.toDataURL('image/png');
+      if(dataUrl.length>45000) dataUrl=c.toDataURL('image/jpeg',0.85);   // 시트 한 칸 용량에 맞춤
+      saveIcon({type:'img', value:dataUrl});
     };
     img.onerror=()=>{ URL.revokeObjectURL(url); msg.textContent='이미지를 읽지 못했어요. 다른 파일로 해 보세요.'; };
     img.src=url;
@@ -465,8 +495,10 @@
   textIn.addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('mApplyText').click(); });
 
   document.getElementById('mReset').addEventListener('click',()=>{
-    store.del(iconKey(current.key));
+    const name=current.key;
+    store.del(iconKey(name));
     paintBadge(preview,null); paintBadge(current.badge,null); msg.textContent='';
+    syncIconMsg(name,'');
   });
   function closeModal(){ bg.classList.remove('open'); current=null; }
   document.getElementById('mClose').addEventListener('click',closeModal);
