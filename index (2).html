@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>오늘의 시작</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#E6E3DD;
+    --card:#F2F0EB;
+    --card-hover:#FAF9F6;
+    --line:#D6D2CA;
+    --text:#2E2D2A;
+    --sub:#6F6B64;
+    --accent:#56677A;
+    --accent-soft:#DDE2E7;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Noto Sans KR',system-ui,sans-serif;
+    background:var(--bg);color:var(--text);
+    min-height:100vh;line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:960px;margin:0 auto;padding:56px 28px 64px}
+  header{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;margin-bottom:40px}
+  .greet{font-size:15px;color:var(--sub);font-weight:400;letter-spacing:-.01em}
+  .date{font-size:30px;font-weight:500;letter-spacing:-.02em;margin-top:4px}
+  .clock{font-size:44px;font-weight:300;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--accent)}
+  h2{font-size:13px;font-weight:500;color:var(--sub);letter-spacing:.06em;margin:0 0 12px 2px}
+  section{margin-bottom:32px}
+  .sec-head{display:flex;justify-content:space-between;align-items:center}
+  /* 버튼이 몇 개든 각 줄이 좌우 전체 폭을 꽉 채우도록 늘어남 */
+  .links{display:flex;flex-wrap:wrap;gap:12px;width:100%}
+  .link{
+    flex:1 1 160px;min-width:0;
+    display:flex;align-items:center;gap:12px;
+    background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:14px 16px;text-decoration:none;color:var(--text);
+    transition:background .15s,transform .15s,border-color .15s;
+  }
+  .link:hover{background:var(--card-hover);border-color:#C8C3B9;transform:translateY(-1px)}
+  .badge{
+    width:36px;height:36px;border-radius:9px;flex:none;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;
+    font-size:15px;font-weight:700;color:#fff;
+  }
+  .badge img{width:100%;height:100%;object-fit:cover;display:block}
+  .badge.custom{background:transparent !important}
+  .badge.emoji{font-size:22px;font-weight:400}
+  .name{font-size:15px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  body.editing .link{border-style:dashed;border-color:var(--accent);cursor:pointer}
+  body.editing .link:hover{transform:none}
+  body.editing .badge{outline:2px solid var(--accent);outline-offset:2px}
+  .edit-toggle{
+    font-family:inherit;font-size:12px;color:var(--sub);background:transparent;
+    border:1px solid var(--line);border-radius:8px;padding:5px 10px;cursor:pointer;margin-bottom:12px;
+  }
+  .edit-toggle:hover{color:var(--text);border-color:#BDB7AC}
+  body.editing .edit-toggle{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .edit-note{display:none;font-size:13px;color:var(--accent);margin:-4px 0 14px 2px}
+  body.editing .edit-note{display:block}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:720px){.grid2{grid-template-columns:1fr}.date{font-size:24px}.clock{font-size:34px}.wrap{padding:36px 18px 48px}}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px}
+  .panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .panel-title{font-size:16px;font-weight:500}
+  .btn{
+    display:inline-flex;align-items:center;gap:6px;
+    font-family:inherit;font-size:13px;font-weight:500;
+    color:var(--accent);background:var(--accent-soft);
+    border:none;border-radius:8px;padding:7px 12px;text-decoration:none;cursor:pointer;
+  }
+  .btn:hover{filter:brightness(.96)}
+  .btn.plain{background:transparent;color:var(--sub);border:1px solid var(--line)}
+  .btn.primary{background:var(--accent);color:#fff}
+  textarea{
+    width:100%;min-height:150px;resize:vertical;
+    font-family:inherit;font-size:14px;line-height:1.7;color:var(--text);
+    background:#FBFAF7;border:1px solid var(--line);border-radius:10px;padding:12px 14px;outline:none;
+  }
+  textarea:focus{border-color:#AEB8C2}
+  .hint{font-size:12px;color:var(--sub);margin-top:8px}
+  .wx-links{display:flex;flex-direction:column;gap:10px}
+  .wx{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:14px 16px;border-radius:10px;background:#FBFAF7;border:1px solid var(--line);
+    text-decoration:none;color:var(--text);font-size:14px;
+  }
+  .wx:hover{border-color:#AEB8C2}
+  /* 오른쪽 칸: 위아래 같은 높이로 나눔 */
+  .grid2{align-items:stretch}
+  .stack{display:grid;grid-template-rows:1fr 1fr;gap:16px}
+  .panel.half{display:flex;flex-direction:column;padding:18px 22px}
+  .panel.half .panel-head{margin-bottom:10px}
+  .tag{font-size:12px;color:var(--sub)}
+  .panel.schedule{display:flex;flex-direction:column}
+  .panel.schedule textarea{flex:1}
+  .song{flex:1}
+  .song-title{font-size:17px;font-weight:500;letter-spacing:-.01em}
+  .song-artist{font-size:13px;color:var(--sub);margin-top:2px}
+  .song-why{font-size:13px;color:var(--text);margin-top:8px;line-height:1.6}
+  .music-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+  .music-btns .btn{justify-content:center;padding:9px 12px}
+  .btn.am{color:#8A5A66;background:#EBDFE2}
+  .wx.main{font-weight:500}
+  .wx-sub{display:flex;gap:16px;margin-top:auto;padding-top:10px}
+  .wx-sub a{font-size:12px;color:var(--sub);text-decoration:none}
+  .wx-sub a:hover{color:var(--accent)}
+  .wx-split{display:grid;grid-template-columns:1fr 1fr;flex:1;align-items:center}
+  .wx-left{padding-right:16px}
+  .wx-right{padding-left:16px;border-left:1px solid var(--line);display:flex;flex-direction:column;gap:12px}
+  .wx-row{display:flex;align-items:center;gap:10px}
+  .wx-icon{font-size:34px;line-height:1}
+  .wx-temp{font-size:30px;font-weight:300;letter-spacing:-.02em;line-height:1.1}
+  .wx-desc{font-size:13px;color:var(--text);margin-top:6px}
+  .wx-meta{font-size:12px;color:var(--sub);margin-top:2px;line-height:1.6}
+  .aq-label{font-size:12px;color:var(--sub)}
+  .aq-label span{font-size:11px;opacity:.75;margin-left:2px}
+  .aq-val{display:flex;align-items:baseline;gap:4px;margin-top:2px}
+  .aq-val b{font-size:20px;font-weight:500}
+  .aq-val small{font-size:11px;color:var(--sub)}
+  .aq-val em{font-style:normal;font-size:13px;font-weight:500;margin-left:6px}
+  .dot{width:8px;height:8px;border-radius:50%;background:#C8C3B9;align-self:center;margin-right:2px}
+  .wx span:last-child{color:var(--sub);font-size:12px}
+  footer{text-align:center;font-size:12px;color:#9A958C;margin-top:24px}
+
+  /* 아이콘 편집 창 */
+  .modal-bg{position:fixed;inset:0;background:rgba(46,45,42,.35);display:none;align-items:center;justify-content:center;padding:20px;z-index:10}
+  .modal-bg.open{display:flex}
+  .modal{background:var(--card);border-radius:16px;padding:24px;width:100%;max-width:360px;box-shadow:0 12px 40px rgba(0,0,0,.18)}
+  .modal h3{font-size:17px;font-weight:500;margin-bottom:16px}
+  .preview-row{display:flex;align-items:center;gap:14px;margin-bottom:20px}
+  .preview-row .badge{width:52px;height:52px;border-radius:12px;font-size:20px}
+  .preview-row .badge.emoji{font-size:30px}
+  .preview-row .sub{font-size:13px;color:var(--sub)}
+  .opt{margin-bottom:16px}
+  .opt label{display:block;font-size:13px;color:var(--sub);margin-bottom:6px}
+  .row{display:flex;gap:8px}
+  .row input[type=text]{
+    flex:1;font-family:inherit;font-size:15px;padding:8px 12px;
+    border:1px solid var(--line);border-radius:8px;background:#FBFAF7;color:var(--text);outline:none;
+  }
+  .row input[type=text]:focus{border-color:#AEB8C2}
+  .modal-foot{display:flex;justify-content:space-between;margin-top:22px;padding-top:16px;border-top:1px solid var(--line)}
+  .msg{font-size:12px;color:#A86A64;margin-top:6px;min-height:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <div class="greet" id="greet">좋은 하루예요</div>
+      <div class="date" id="date"></div>
+    </div>
+    <div class="clock" id="clock"></div>
+  </header>
+
+  <div class="sec-head">
+    <h2>AI 도구</h2>
+    <button class="edit-toggle" id="editToggle">아이콘 바꾸기</button>
+  </div>
+  <div class="edit-note">바꿀 버튼을 누르세요. 다 끝나면 오른쪽 위 [완료]를 누르세요.</div>
+
+  <section>
+    <div class="links">
+      <a class="link" data-key="claude" href="https://claude.ai" target="_blank" rel="noopener noreferrer"><span class="badge" data-bg="#B07A5E" data-letter="C"></span><span class="name">Claude</span></a>
+      <a class="link" data-key="chatgpt" href="https://chatgpt.com" target="_blank" rel="noopener noreferrer"><span class="badge" data-bg="#5E8A7A" data-letter="G"></span><span class="name">ChatGPT</span></a>
+      <a class="link" data-key="gemini" href="https://gemini.google.com" target="_blank" rel="noopener noreferrer"><span class="badge" data-bg="#6A7BA0" data-letter="G"></span><span class="name">Gemini</span></a>
+      <a class="link" data-key="notebooklm" href="https://notebooklm.google.com" target="_blank" rel="noopener noreferrer"><span class="badge" data-bg="#7C7392" data-letter="N"></span><span class="name">NotebookLM</span></a>
+    </div>
+  </section>
+
+  <section>
+    <h2>검색 · 메일 · 영상</h2>
+    <div class="links">
+      <a class="link" data-key="google" href="https://www.google.com" target="_blank" rel="noopener noreferrer"><span class="badge" data-bg="#5F7590" data-letter="G"></span><span class="name">Google</span></a>
+      <a class="link" data-key="gmail" href="https://mail.google.com" target="_blank" rel="noopener noreferrer"><span class="badge" data-bg="#A86A64" data-letter="M"></span><span class="name">Gmail</span></a>
+      <a class="link" data-key="naver" href="https://www.naver.com" target="_blank" rel="noopener noreferrer"><span class="badge" data-bg="#5E8C63" data-letter="N"></span><span class="name">Naver</span></a>
+      <a class="link" data-key="youtube" href="https://www.youtube.com" target="_blank" rel="noopener noreferrer"><span class="badge" data-bg="#A0575A" data-letter="Y"></span><span class="name">YouTube</span></a>
+    </div>
+  </section>
+
+  <section class="grid2">
+    <div class="panel schedule">
+      <div class="panel-head">
+        <div class="panel-title">오늘 일정</div>
+        <a class="btn" href="https://www.icloud.com/calendar/" target="_blank" rel="noopener noreferrer">iCloud 캘린더 열기 ↗</a>
+      </div>
+      <textarea id="memo" placeholder="오늘 일정이나 할 일을 적어 두세요.&#10;예) 10:00 주간 회의&#10;19:30 공연 관람"></textarea>
+      <div class="hint" id="memo-hint">이 브라우저에 자동 저장돼요.</div>
+    </div>
+
+    <div class="stack">
+      <!-- 위: 오늘의 음악 (MUSIC-START ~ MUSIC-END 구간만 매일 교체) -->
+      <div class="panel half music">
+        <div class="panel-head">
+          <div class="panel-title">오늘의 음악</div>
+          <div class="tag" id="musicDate">2026.11.11</div>
+        </div>
+        <!--MUSIC-START-->
+        <div class="song">
+          <div class="song-title">Seasons of Love</div>
+          <div class="song-artist">뮤지컬 〈렌트(Rent)〉 오리지널 캐스트</div>
+          <div class="song-why">한 해를 52만 5600분으로 세어 보는 노래예요. 하루를 시작하며 오늘의 몇 분을 어디에 쓸지 떠올려 보기 좋아요.</div>
+        </div>
+        <div class="music-btns">
+          <a class="btn" href="https://www.youtube.com/results?search_query=Seasons+of+Love+Rent+original+cast" target="_blank" rel="noopener noreferrer">▶ YouTube</a>
+          <a class="btn am" href="https://music.apple.com/kr/search?term=Seasons%20of%20Love%20Rent" target="_blank" rel="noopener noreferrer">♪ Apple Music</a>
+        </div>
+        <!--MUSIC-END-->
+      </div>
+
+      <!-- 아래: 현재 위치 기준 날씨 (Open-Meteo, 키 없이 무료) -->
+      <div class="panel half">
+        <div class="panel-head">
+          <div class="panel-title">날씨</div>
+          <div class="tag" id="wxPlace">위치 확인 중…</div>
+        </div>
+        <div class="wx-split">
+          <div class="wx-left" id="wxNow">
+            <div class="wx-row">
+              <div class="wx-icon" id="wxIcon">·</div>
+              <div class="wx-temp" id="wxTemp">--°</div>
+            </div>
+            <div class="wx-desc" id="wxDesc">날씨를 불러오는 중이에요</div>
+            <div class="wx-meta" id="wxMeta"></div>
+          </div>
+          <div class="wx-right">
+            <div class="aq">
+              <div class="aq-label">미세먼지 <span>PM10</span></div>
+              <div class="aq-val"><span class="dot" id="pm10Dot"></span><b id="pm10">--</b><small>㎍/㎥</small><em id="pm10Grade"></em></div>
+            </div>
+            <div class="aq">
+              <div class="aq-label">초미세먼지 <span>PM2.5</span></div>
+              <div class="aq-val"><span class="dot" id="pm25Dot"></span><b id="pm25">--</b><small>㎍/㎥</small><em id="pm25Grade"></em></div>
+            </div>
+          </div>
+        </div>
+        <div class="wx-sub">
+          <a href="https://search.naver.com/search.naver?query=%EC%98%A4%EB%8A%98+%EB%82%A0%EC%94%A8" target="_blank" rel="noopener noreferrer">네이버 날씨 ↗</a>
+          <a href="https://www.weather.go.kr/w/index.do" target="_blank" rel="noopener noreferrer">기상청 예보 ↗</a>
+          <a href="https://www.airkorea.or.kr/web/" target="_blank" rel="noopener noreferrer">에어코리아 ↗</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>오늘도 차분하게 시작해요</footer>
+</div>
+
+<!-- 아이콘 편집 창 -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal" role="dialog" aria-modal="true">
+    <h3 id="mTitle">아이콘 바꾸기</h3>
+    <div class="preview-row">
+      <span class="badge" id="mPreview"></span>
+      <span class="sub">지금 아이콘</span>
+    </div>
+    <div class="opt">
+      <label>① 내 이미지로 바꾸기 (PNG, JPG 등)</label>
+      <button class="btn" id="mPick">이미지 선택…</button>
+      <input type="file" id="mFile" accept="image/*" hidden>
+    </div>
+    <div class="opt">
+      <label>② 글자나 이모지로 바꾸기 (최대 2자)</label>
+      <div class="row">
+        <input type="text" id="mText" maxlength="2" placeholder="예: 🎭 또는 AI">
+        <button class="btn" id="mApplyText">적용</button>
+      </div>
+    </div>
+    <div class="msg" id="mMsg"></div>
+    <div class="modal-foot">
+      <button class="btn plain" id="mReset">기본으로 되돌리기</button>
+      <button class="btn primary" id="mClose">닫기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* 날짜·시계·인사말 */
+  const days=['일','월','화','수','목','금','토'];
+  function tick(){
+    const n=new Date();
+    const h=n.getHours(), m=String(n.getMinutes()).padStart(2,'0');
+    document.getElementById('clock').textContent=String(h).padStart(2,'0')+':'+m;
+    document.getElementById('date').textContent=
+      n.getFullYear()+'년 '+(n.getMonth()+1)+'월 '+n.getDate()+'일 '+days[n.getDay()]+'요일';
+    let g='좋은 하루예요';
+    if(h>=5&&h<11) g='좋은 아침이에요, Kerby';
+    else if(h>=11&&h<17) g='좋은 오후예요, Kerby';
+    else if(h>=17&&h<22) g='편안한 저녁이에요, Kerby';
+    else g='늦은 시간이에요, Kerby';
+    document.getElementById('greet').textContent=g;
+  }
+  tick(); setInterval(tick,10000);
+
+  /* 저장 도우미 (저장이 안 되는 환경에서도 페이지는 정상 동작) */
+  const store={
+    get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
+    set(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){ return false; } },
+    del(k){ try{ localStorage.removeItem(k); }catch(e){} }
+  };
+
+  /* 오늘 메모 */
+  const memo=document.getElementById('memo');
+  const MEMO_KEY='today-dashboard-memo';
+  const saved=store.get(MEMO_KEY); if(saved) memo.value=saved;
+  if(!store.set('__t','1')) document.getElementById('memo-hint').textContent='이 화면에서는 메모가 저장되지 않아요.';
+  let t; memo.addEventListener('input',()=>{ clearTimeout(t); t=setTimeout(()=>store.set(MEMO_KEY,memo.value),400); });
+
+  /* 아이콘 그리기 */
+  const iconKey=k=>'icon-'+k;
+  function paintBadge(badge, data){
+    badge.className='badge'; badge.innerHTML=''; badge.style.background=badge.dataset.bg;
+    if(data && data.type==='img'){
+      badge.classList.add('custom');
+      const img=document.createElement('img'); img.src=data.value; img.alt=''; badge.appendChild(img);
+    }else if(data && data.type==='text'){
+      const isEmoji=/\p{Extended_Pictographic}/u.test(data.value);
+      if(isEmoji){ badge.classList.add('custom','emoji'); }
+      badge.textContent=data.value;
+    }else{
+      badge.textContent=badge.dataset.letter;
+    }
+  }
+  function loadIcon(key){ try{ return JSON.parse(store.get(iconKey(key))); }catch(e){ return null; } }
+  function paintAll(){
+    document.querySelectorAll('.link').forEach(a=>paintBadge(a.querySelector('.badge'), loadIcon(a.dataset.key)));
+  }
+  paintAll();
+
+  /* 편집 모드 */
+  const toggle=document.getElementById('editToggle');
+  toggle.addEventListener('click',()=>{
+    const on=document.body.classList.toggle('editing');
+    toggle.textContent=on?'완료':'아이콘 바꾸기';
+  });
+
+  /* 편집 창 */
+  const bg=document.getElementById('modalBg'), preview=document.getElementById('mPreview'),
+        fileIn=document.getElementById('mFile'), textIn=document.getElementById('mText'),
+        msg=document.getElementById('mMsg');
+  let current=null; // {key, badge, name}
+
+  document.querySelectorAll('.link').forEach(a=>{
+    a.addEventListener('click',e=>{
+      if(!document.body.classList.contains('editing')) return;
+      e.preventDefault();
+      current={key:a.dataset.key, badge:a.querySelector('.badge')};
+      preview.dataset.bg=current.badge.dataset.bg; preview.dataset.letter=current.badge.dataset.letter;
+      paintBadge(preview, loadIcon(current.key));
+      document.getElementById('mTitle').textContent=a.querySelector('.name').textContent+' 아이콘 바꾸기';
+      textIn.value=''; msg.textContent='';
+      bg.classList.add('open');
+    });
+  });
+
+  function saveIcon(data){
+    const ok=store.set(iconKey(current.key), JSON.stringify(data));
+    paintBadge(preview,data); paintBadge(current.badge,data);
+    msg.textContent= ok ? '' : '이 화면에서는 저장되지 않아 새로고침하면 원래대로 돌아가요.';
+  }
+
+  document.getElementById('mPick').addEventListener('click',()=>fileIn.click());
+  fileIn.addEventListener('change',()=>{
+    const f=fileIn.files[0]; fileIn.value='';
+    if(!f) return;
+    if(!f.type.startsWith('image/')){ msg.textContent='이미지 파일만 쓸 수 있어요.'; return; }
+    const url=URL.createObjectURL(f), img=new Image();
+    img.onload=()=>{
+      // 가운데를 정사각형으로 잘라 작게 줄여서 저장
+      const S=96, c=document.createElement('canvas'); c.width=c.height=S;
+      const s=Math.min(img.width,img.height), sx=(img.width-s)/2, sy=(img.height-s)/2;
+      c.getContext('2d').drawImage(img,sx,sy,s,s,0,0,S,S);
+      URL.revokeObjectURL(url);
+      saveIcon({type:'img', value:c.toDataURL('image/png')});
+    };
+    img.onerror=()=>{ URL.revokeObjectURL(url); msg.textContent='이미지를 읽지 못했어요. 다른 파일로 해 보세요.'; };
+    img.src=url;
+  });
+
+  document.getElementById('mApplyText').addEventListener('click',()=>{
+    const v=textIn.value.trim();
+    if(!v){ msg.textContent='글자나 이모지를 입력하세요.'; return; }
+    saveIcon({type:'text', value:v});
+  });
+  textIn.addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('mApplyText').click(); });
+
+  document.getElementById('mReset').addEventListener('click',()=>{
+    store.del(iconKey(current.key));
+    paintBadge(preview,null); paintBadge(current.badge,null); msg.textContent='';
+  });
+  function closeModal(){ bg.classList.remove('open'); current=null; }
+  document.getElementById('mClose').addEventListener('click',closeModal);
+  bg.addEventListener('click',e=>{ if(e.target===bg) closeModal(); });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape' && bg.classList.contains('open')) closeModal(); });
+
+  /* 날씨: 브라우저 위치 → Open-Meteo 예보, 위치 거부 시 서울 기준 */
+  const WMO={0:['☀️','맑음'],1:['🌤️','대체로 맑음'],2:['⛅','구름 조금'],3:['☁️','흐림'],45:['🌫️','안개'],48:['🌫️','짙은 안개'],
+    51:['🌦️','약한 이슬비'],53:['🌦️','이슬비'],55:['🌧️','강한 이슬비'],56:['🌧️','어는 이슬비'],57:['🌧️','어는 이슬비'],
+    61:['🌧️','약한 비'],63:['🌧️','비'],65:['🌧️','강한 비'],66:['🌧️','어는 비'],67:['🌧️','어는 비'],
+    71:['🌨️','약한 눈'],73:['🌨️','눈'],75:['❄️','많은 눈'],77:['🌨️','싸락눈'],80:['🌦️','소나기'],81:['🌧️','소나기'],82:['⛈️','강한 소나기'],
+    85:['🌨️','눈 소나기'],86:['❄️','강한 눈 소나기'],95:['⛈️','뇌우'],96:['⛈️','우박 동반 뇌우'],99:['⛈️','우박 동반 뇌우']};
+  function getPos(){
+    return new Promise(res=>{
+      if(!navigator.geolocation) return res(null);
+      navigator.geolocation.getCurrentPosition(p=>res(p.coords),()=>res(null),{timeout:8000,maximumAge:1800000});
+    });
+  }
+  async function loadWeather(){
+    const place=document.getElementById('wxPlace');
+    try{
+      const c=await getPos();
+      const lat=c?c.latitude:37.5665, lon=c?c.longitude:126.9780;
+      place.textContent=c?'현재 위치':'서울 (위치 허용 안 됨)';
+      const url='https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+
+        '&current=temperature_2m,apparent_temperature,weather_code'+
+        '&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=1';
+      const d=await (await fetch(url)).json();
+      const [ic,desc]=WMO[d.current.weather_code]||['🌡️','—'];
+      document.getElementById('wxIcon').textContent=ic;
+      document.getElementById('wxTemp').textContent=Math.round(d.current.temperature_2m)+'°';
+      document.getElementById('wxDesc').textContent=desc+' · 체감 '+Math.round(d.current.apparent_temperature)+'°';
+      document.getElementById('wxMeta').innerHTML='최고 '+Math.round(d.daily.temperature_2m_max[0])+'° · 최저 '+Math.round(d.daily.temperature_2m_min[0])+'°<br>강수확률 '+(d.daily.precipitation_probability_max[0]??'-')+'%';
+      loadAir(lat,lon);
+      if(c){
+        try{
+          const g=await (await fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude='+lat+'&longitude='+lon+'&localityLanguage=ko')).json();
+          const name=[g.city,g.locality].filter((v,i,a)=>v&&a.indexOf(v)===i).join(' ');
+          if(name) place.textContent=name;
+        }catch(e){}
+      }
+    }catch(e){
+      document.getElementById('wxDesc').textContent='날씨를 불러오지 못했어요. 아래 링크를 이용해 주세요.';
+    }
+  }
+  /* 미세먼지: Open-Meteo 대기질(모델 추정치), 등급은 환경부 기준 */
+  const AQ_COLORS={'좋음':'#5B86B0','보통':'#6E9A6A','나쁨':'#C49A4A','매우나쁨':'#B0605A'};
+  function grade(v,cut){ return v<=cut[0]?'좋음':v<=cut[1]?'보통':v<=cut[2]?'나쁨':'매우나쁨'; }
+  function showAQ(id,v,cut){
+    const el=document.getElementById(id), g=document.getElementById(id+'Grade'), dt=document.getElementById(id+'Dot');
+    if(v==null){ el.textContent='--'; g.textContent=''; return; }
+    const gr=grade(v,cut); el.textContent=Math.round(v); g.textContent=gr; g.style.color=AQ_COLORS[gr]; dt.style.background=AQ_COLORS[gr];
+  }
+  async function loadAir(lat,lon){
+    try{
+      const a=await (await fetch('https://air-quality-api.open-meteo.com/v1/air-quality?latitude='+lat+'&longitude='+lon+'&current=pm10,pm2_5&timezone=auto')).json();
+      showAQ('pm10',a.current.pm10,[30,80,150]);
+      showAQ('pm25',a.current.pm2_5,[15,35,75]);
+    }catch(e){
+      document.getElementById('pm10Grade').textContent='불러오지 못함';
+    }
+  }
+  loadWeather(); setInterval(loadWeather,30*60*1000);
+</script>
+</body>
+</html>
