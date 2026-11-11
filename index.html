@@ -588,7 +588,42 @@
       document.getElementById('songWhy').textContent=r[5]||'';
       if(r[6]) document.getElementById('songYT').href=r[6];
       if(r[7]) document.getElementById('songAM').href=r[7];
+      findAppleTrack(r[3]||'', r[4]||'', r[7]||'');
     }catch(e){ /* 시트를 못 읽으면 기본 곡을 그대로 보여 줌 */ }
+  }
+  /* Apple Music: 검색 결과 대신 그 곡 페이지로 바로 연결 (iTunes 검색 API, 실패하면 검색 링크 유지) */
+  const norm=t=>String(t).toLowerCase().replace(/\(.*?\)|\[.*?\]|〈.*?〉/g,' ').replace(/[^a-z0-9가-힣]+/g,' ').trim();
+  async function findAppleTrack(title, artist, searchUrl){
+    try{
+      const m=/[?&]term=([^&]+)/.exec(searchUrl); if(!m) return;
+      const term=decodeURIComponent(m[1].replace(/\+/g,' '));
+      const sr=await (await fetch('https://itunes.apple.com/search?term='+encodeURIComponent(term)+'&country=us&entity=song&limit=15')).json();
+      const want=norm(title), wantArtist=norm(artist), strict=/^[a-z0-9 ]+$/.test(wantArtist);
+      const bad=/remix|karaoke|instrumental|8d|sped up|slowed|cover|tribute|lullaby|music box/i;
+      const titleWords=new Set(want.split(' '));
+      const extra=norm(term).split(' ').filter(w=>w.length>2&&!titleWords.has(w));
+      let best=null, bestScore=-9;
+      (sr.results||[]).forEach((x,i)=>{
+        const n=norm(x.trackName), an=norm(x.artistName+' '+(x.collectionName||''));
+        let sc=0;
+        if(n===want) sc+=3;
+        else if((n.includes(want)||want.includes(n))&&Math.abs(n.split(' ').length-want.split(' ').length)<=2) sc+=1;
+        else sc-=5;
+        let as=0;
+        if(wantArtist&&an.includes(wantArtist)) as=3;
+        else if(!strict&&extra.some(w=>an.includes(w))) as=1;
+        sc+= as===0 ? -5 : as;
+        if(bad.test(x.trackName+' '+x.artistName)&&!bad.test(title)) sc-=2;
+        sc-=i*0.05;
+        if(sc>bestScore){bestScore=sc;best=x;}
+      });
+      if(!best||bestScore<1) return;   // 확실한 곡이 없으면 검색 링크 유지
+      const lr=await (await fetch('https://itunes.apple.com/lookup?id='+best.trackId+'&country=kr')).json();
+      const kr=(lr.results||[])[0]; if(!kr||!kr.trackViewUrl) return;   // 한국 Apple Music에 없으면 검색 링크 유지
+      let url=kr.trackViewUrl.replace(/([?&])uo=\d+&?/,'$1').replace(/[?&]$/,'');
+      if(!/[?&]i=/.test(url)) url+=(url.includes('?')?'&':'?')+'i='+kr.trackId;
+      document.getElementById('songAM').href=url;
+    }catch(e){ /* 검색 링크 그대로 사용 */ }
   }
   loadMusic();
 
