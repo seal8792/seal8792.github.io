@@ -100,6 +100,9 @@
   .panel.schedule{display:flex;flex-direction:column}
   .panel.schedule textarea{flex:1}
   .song{flex:1}
+  .song-genre{font-size:11px;color:var(--accent);letter-spacing:.04em;margin-bottom:2px}
+  .tag-link{text-decoration:none}
+  .tag-link:hover{color:var(--accent);text-decoration:underline}
   .song-title{font-size:17px;font-weight:500;letter-spacing:-.01em}
   .song-artist{font-size:13px;color:var(--sub);margin-top:2px}
   .song-why{font-size:13px;color:var(--text);margin-top:8px;line-height:1.6}
@@ -200,17 +203,18 @@
       <div class="panel half music">
         <div class="panel-head">
           <div class="panel-title">오늘의 음악</div>
-          <div class="tag" id="musicDate">2026.11.11</div>
+          <a class="tag tag-link" id="musicDate" href="https://docs.google.com/spreadsheets/d/1HNZZJ_zn6vBGPK6YnlUecdr2PlmgllZYfaFaW7z1zo4/edit" target="_blank" rel="noopener noreferrer" title="지난 곡 기록 보기">2026.11.11</a>
         </div>
         <!--MUSIC-START-->
         <div class="song">
-          <div class="song-title">Seasons of Love</div>
-          <div class="song-artist">뮤지컬 〈렌트(Rent)〉 오리지널 캐스트</div>
-          <div class="song-why">한 해를 52만 5600분으로 세어 보는 노래예요. 하루를 시작하며 오늘의 몇 분을 어디에 쓸지 떠올려 보기 좋아요.</div>
+          <div class="song-genre" id="songGenre">뮤지컬 넘버</div>
+          <div class="song-title" id="songTitle">Seasons of Love</div>
+          <div class="song-artist" id="songArtist">뮤지컬 〈렌트(Rent)〉 오리지널 캐스트</div>
+          <div class="song-why" id="songWhy">한 해를 52만 5600분으로 세어 보는 노래예요. 하루를 시작하며 오늘의 몇 분을 어디에 쓸지 떠올려 보기 좋아요.</div>
         </div>
         <div class="music-btns">
-          <a class="btn" href="https://www.youtube.com/results?search_query=Seasons+of+Love+Rent+original+cast" target="_blank" rel="noopener noreferrer">▶ YouTube</a>
-          <a class="btn am" href="https://music.apple.com/kr/search?term=Seasons%20of%20Love%20Rent" target="_blank" rel="noopener noreferrer">♪ Apple Music</a>
+          <a class="btn" id="songYT" href="https://www.youtube.com/results?search_query=Seasons+of+Love+Rent+original+cast" target="_blank" rel="noopener noreferrer">▶ YouTube</a>
+          <a class="btn am" id="songAM" href="https://music.apple.com/kr/search?term=Seasons%20of%20Love%20Rent" target="_blank" rel="noopener noreferrer">♪ Apple Music</a>
         </div>
         <!--MUSIC-END-->
       </div>
@@ -457,6 +461,35 @@
     }
   }
   loadWeather(); setInterval(loadWeather,30*60*1000);
+
+  /* 오늘의 음악: 구글 시트(음악기록)에서 오늘 날짜 곡을 읽어 옴 */
+  const SHEET_CSV='https://docs.google.com/spreadsheets/d/1HNZZJ_zn6vBGPK6YnlUecdr2PlmgllZYfaFaW7z1zo4/gviz/tq?tqx=out:csv&sheet='+encodeURIComponent('음악기록');
+  function parseCSV(t){
+    const rows=[];let row=[],f='',q=false;
+    for(let i=0;i<t.length;i++){const c=t[i];
+      if(q){ if(c=='"'){ if(t[i+1]=='"'){f+='"';i++;} else q=false; } else f+=c; }
+      else if(c=='"') q=true; else if(c==','){row.push(f);f='';}
+      else if(c=='\n'){row.push(f);rows.push(row);row=[];f='';} else if(c!='\r') f+=c; }
+    if(f||row.length){row.push(f);rows.push(row);} return rows;
+  }
+  function todayStr(){const n=new Date();return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');}
+  async function loadMusic(){
+    try{
+      const rows=parseCSV(await (await fetch(SHEET_CSV,{cache:'no-store'})).text()).slice(1).filter(r=>/^\d{4}-\d{2}-\d{2}$/.test((r[0]||'').trim()));
+      const t=todayStr();
+      const past=rows.filter(r=>r[0].trim()<=t).sort((a,b)=>a[0]<b[0]?-1:1);
+      const r=rows.find(r=>r[0].trim()===t)||past[past.length-1];
+      if(!r) return;
+      document.getElementById('musicDate').textContent=r[0].trim().replace(/-/g,'.');
+      document.getElementById('songGenre').textContent=r[2]||'';
+      document.getElementById('songTitle').textContent=r[3]||'';
+      document.getElementById('songArtist').textContent=r[4]||'';
+      document.getElementById('songWhy').textContent=r[5]||'';
+      if(r[6]) document.getElementById('songYT').href=r[6];
+      if(r[7]) document.getElementById('songAM').href=r[7];
+    }catch(e){ /* 시트를 못 읽으면 기본 곡을 그대로 보여 줌 */ }
+  }
+  loadMusic();
 </script>
 </body>
 </html>
