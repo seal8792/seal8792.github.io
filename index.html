@@ -192,7 +192,7 @@
     <div class="panel schedule">
       <div class="panel-head">
         <div class="panel-title">오늘 일정</div>
-        <a class="btn" href="https://www.icloud.com/calendar/" target="_blank" rel="noopener noreferrer">iCloud 캘린더 열기 ↗</a>
+        <a class="btn" id="calBtn" href="https://www.icloud.com/calendar/" target="_blank" rel="noopener noreferrer">iCloud 캘린더 열기 ↗</a>
       </div>
       <textarea id="memo" placeholder="오늘 일정이나 할 일을 적어 두세요.&#10;예) 10:00 주간 회의&#10;19:30 공연 관람"></textarea>
       <div class="hint" id="memo-hint">이 브라우저에 자동 저장돼요.</div>
@@ -493,6 +493,17 @@
     }catch(e){ /* 시트를 못 읽으면 기본 곡을 그대로 보여 줌 */ }
   }
   loadMusic();
+
+  /* 캘린더 버튼: 아이폰·아이패드에서는 단축어 'AnySchedule열기'를 실행해 AnySchedule 앱을 엶 */
+  (function(){
+    const ua=navigator.userAgent;
+    const isIOS=/iPhone|iPad|iPod/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1);
+    if(!isIOS) return;
+    const b=document.getElementById('calBtn');
+    b.href='shortcuts://run-shortcut?name='+encodeURIComponent('AnySchedule열기');
+    b.removeAttribute('target');
+    b.textContent='AnySchedule 열기 ↗';
+  })();
 </script>
 </body>
 </html>
