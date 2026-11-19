@@ -34,9 +34,10 @@
   section{margin-bottom:32px}
   .sec-head{display:flex;justify-content:space-between;align-items:center}
   /* 버튼이 몇 개든 각 줄이 좌우 전체 폭을 꽉 채우도록 늘어남 */
-  .links{display:flex;flex-wrap:wrap;gap:12px;width:100%}
+  /* 버튼 칸: 한 줄에 들어가는 개수를 계산해 모든 칸을 같은 너비로 균분 */
+  .links{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;width:100%}
   .link{
-    flex:1 1 160px;min-width:0;
+    min-width:0;
     display:flex;align-items:center;gap:12px;
     background:var(--card);border:1px solid var(--line);border-radius:12px;
     padding:14px 16px;text-decoration:none;color:var(--text);
@@ -150,7 +151,7 @@
   /* 아이콘 편집 창 */
   .modal-bg{position:fixed;inset:0;background:rgba(46,45,42,.35);display:none;align-items:center;justify-content:center;padding:20px;z-index:10}
   .modal-bg.open{display:flex}
-  .modal{background:var(--card);border-radius:16px;padding:24px;width:100%;max-width:360px;box-shadow:0 12px 40px rgba(0,0,0,.18)}
+  .modal{max-height:90vh;overflow:auto;background:var(--card);border-radius:16px;padding:24px;width:100%;max-width:360px;box-shadow:0 12px 40px rgba(0,0,0,.18)}
   .modal h3{font-size:17px;font-weight:500;margin-bottom:16px}
   .preview-row{display:flex;align-items:center;gap:14px;margin-bottom:20px}
   .preview-row .badge{width:52px;height:52px;border-radius:12px;font-size:20px}
@@ -165,6 +166,15 @@
   }
   .row input[type=text]:focus{border-color:#AEB8C2}
   .modal-foot{display:flex;justify-content:space-between;margin-top:22px;padding-top:16px;border-top:1px solid var(--line)}
+  .row .btn{white-space:nowrap;flex:none}
+  .add-tile{display:none;align-items:center;justify-content:center;gap:6px;min-height:66px;border:1.5px dashed var(--accent);border-radius:12px;background:transparent;color:var(--accent);font-family:inherit;font-size:14px;cursor:pointer}
+  .add-tile:hover{background:var(--card)}
+  body.editing .add-tile{display:flex}
+  .row-restore{display:none;font-family:inherit;font-size:12px;color:var(--accent);background:none;border:none;cursor:pointer;margin:8px 0 0 2px;padding:0}
+  body.editing .row-restore.has{display:inline-block}
+  .btn.danger{color:#A0575A;background:#F0E0E0}
+  .m-sep{border:none;border-top:1px solid var(--line);margin:4px 0 16px}
+  body.editing h2[data-sec]{outline:1px dashed var(--accent);outline-offset:3px;border-radius:4px;cursor:text;color:var(--text)}
   .msg{font-size:12px;color:var(--accent);margin-top:6px;min-height:16px}
 </style>
 </head>
@@ -180,13 +190,13 @@
   </header>
 
   <div class="sec-head">
-    <h2>AI 도구</h2>
-    <button class="edit-toggle" id="editToggle">아이콘 바꾸기</button>
+    <h2 data-sec="ai">AI 도구</h2>
+    <button class="edit-toggle" id="editToggle">편집</button>
   </div>
-  <div class="edit-note">바꿀 버튼을 누르세요. 다 끝나면 오른쪽 위 [완료]를 누르세요.</div>
+  <div class="edit-note">버튼을 누르면 이름·링크·아이콘을 바꿀 수 있어요. 줄 제목은 눌러서 바로 고치세요. 다 끝나면 오른쪽 위 [완료]를 누르세요.</div>
 
   <section>
-    <div class="links">
+    <div class="links" data-row="ai">
       <a class="link" data-key="claude" href="https://claude.ai" target="_blank" rel="noopener noreferrer"><span class="badge" data-bg="#B07A5E" data-letter="C"></span><span class="name">Claude</span></a>
       <a class="link" data-key="chatgpt" href="https://chatgpt.com" target="_blank" rel="noopener noreferrer"><span class="badge" data-bg="#5E8A7A" data-letter="G"></span><span class="name">ChatGPT</span></a>
       <a class="link" data-key="gemini" href="https://gemini.google.com" target="_blank" rel="noopener noreferrer"><span class="badge" data-bg="#6A7BA0" data-letter="G"></span><span class="name">Gemini</span></a>
@@ -195,8 +205,8 @@
   </section>
 
   <section>
-    <h2>검색 · 메일 · 영상</h2>
-    <div class="links">
+    <h2 data-sec="search">검색 · 메일 · 영상</h2>
+    <div class="links" data-row="search">
       <a class="link" data-key="google" href="https://www.google.com" target="_blank" rel="noopener noreferrer"><span class="badge" data-bg="#5F7590" data-letter="G"></span><span class="name">Google</span></a>
       <a class="link" data-key="gmail" href="https://mail.google.com" target="_blank" rel="noopener noreferrer"><span class="badge" data-bg="#A86A64" data-letter="M"></span><span class="name">Gmail</span></a>
       <a class="link" data-key="naver" href="https://www.naver.com" target="_blank" rel="noopener noreferrer"><span class="badge" data-bg="#5E8C63" data-letter="N"></span><span class="name">Naver</span></a>
@@ -293,10 +303,10 @@
   </section>
 
   <section class="sheets-sec">
-    <h2>내 구글 시트</h2>
-    <div class="links">
+    <h2 data-sec="life">My Life</h2>
+    <div class="links" data-row="life">
       <a class="link" data-key="gromit" href="https://docs.google.com/spreadsheets/d/19w5kMmRGNym1S68h3igX_ox5McAxeMcYPOYQzRI33Tc/edit" target="_blank" rel="noopener noreferrer"><span class="badge" data-bg="#8A6F86" data-letter="GW"></span><span class="name">Gromit &amp; Wallace</span></a>
-      <a class="link" data-key="budget" href="https://docs.google.com/spreadsheets/d/1kqmaJlUDrlw0Kw6UAumJFU-27UYvRn-BiYmr83j-E-c/edit" target="_blank" rel="noopener noreferrer"><span class="badge" data-bg="#7A8A5E" data-letter="F"></span><span class="name">My Finance</span></a>
+      <a class="link" data-key="budget" href="https://script.google.com/macros/s/AKfycbw_kLKFiqk8g7752qtHG2woiQ0EXS__gtBszAkYJHpcqME1EcuUsd3MBozX9TMed_ZGQQ/exec" target="_blank" rel="noopener noreferrer"><span class="badge" data-bg="#7A8A5E" data-letter="F"></span><span class="name">My Finance</span></a>
       <a class="link" data-key="golf" href="https://docs.google.com/spreadsheets/d/1rSFx032S9H6ibTEiv8TzxW3qCPcw42zaNqepnpjUKOs/edit" target="_blank" rel="noopener noreferrer"><span class="badge" data-bg="#5E8A80" data-letter="골"></span><span class="name">My Golf History</span></a>
       <a class="link" data-key="booking" href="https://docs.google.com/spreadsheets/d/1dCB7-3qv0VllrUZga7nM_sNcJ-2W7rnfWSmYna0uNXk/edit" target="_blank" rel="noopener noreferrer"><span class="badge" data-bg="#9A7A5E" data-letter="B"></span><span class="name">Booking Calendar</span></a>
     </div>
@@ -308,7 +318,21 @@
 <!-- 아이콘 편집 창 -->
 <div class="modal-bg" id="modalBg">
   <div class="modal" role="dialog" aria-modal="true">
-    <h3 id="mTitle">아이콘 바꾸기</h3>
+    <h3 id="mTitle">버튼 편집</h3>
+    <div class="opt">
+      <label>버튼 이름</label>
+      <div class="row"><input type="text" id="mName" maxlength="30"></div>
+    </div>
+    <div class="opt">
+      <label>링크 주소 (https://로 시작)</label>
+      <div class="row"><input type="text" id="mHref" inputmode="url" autocomplete="off"></div>
+    </div>
+    <div class="opt">
+      <button class="btn" id="mSaveLabel">이름·링크 저장</button>
+      <div class="msg" id="mLabelMsg"></div>
+    </div>
+    <div id="mIconArea">
+    <hr class="m-sep">
     <div class="preview-row">
       <span class="badge" id="mPreview"></span>
       <span class="sub">지금 아이콘</span>
@@ -326,8 +350,12 @@
       </div>
     </div>
     <div class="msg" id="mMsg"></div>
+    </div>
     <div class="modal-foot">
-      <button class="btn plain" id="mReset">기본으로 되돌리기</button>
+      <span>
+        <button class="btn plain" id="mReset">모두 기본으로</button>
+        <button class="btn danger" id="mDelete">삭제</button>
+      </span>
       <button class="btn primary" id="mClose">닫기</button>
     </div>
   </div>
@@ -417,87 +445,218 @@
     load().then(()=>{ if(!memo.value&&local){ memo.value=local; dirty=true; save(); } });
   });
 
-  /* 아이콘 그리기 */
+  /* ===== 버튼 줄: 기본 버튼 + 추가/삭제/이름·링크·아이콘 편집 =====
+     저장 이름(구글 시트 '아이콘' 탭과 동기화):
+       버튼키            → 아이콘
+       lbl-버튼키        → 기본 버튼의 바뀐 이름·링크
+       row-줄키          → {hidden:[삭제한 기본 버튼], added:[{key,name,href}]}
+       sec-줄키          → 줄 제목 */
   const iconKey=k=>'icon-'+k;
+  function loadJSON(n){ try{ return JSON.parse(store.get(iconKey(n))); }catch(e){ return null; } }
+  const PALETTE=['#B07A5E','#5E8A7A','#6A7BA0','#7C7392','#A86A64','#5F7590','#5E8C63','#8A6F86','#7A8A5E','#9A7A5E'];
+
   function paintBadge(badge, data){
     badge.className='badge'; badge.innerHTML=''; badge.style.background=badge.dataset.bg;
     if(data && data.type==='img'){
       badge.classList.add('custom');
       const img=document.createElement('img'); img.src=data.value; img.alt=''; badge.appendChild(img);
     }else if(data && data.type==='text'){
-      const isEmoji=/\p{Extended_Pictographic}/u.test(data.value);
-      if(isEmoji){ badge.classList.add('custom','emoji'); }
+      if(/\p{Extended_Pictographic}/u.test(data.value)) badge.classList.add('custom','emoji');
       badge.textContent=data.value;
     }else{
       badge.textContent=badge.dataset.letter;
     }
   }
-  function loadIcon(key){ try{ return JSON.parse(store.get(iconKey(key))); }catch(e){ return null; } }
-  function paintAll(){
-    document.querySelectorAll('.link').forEach(a=>paintBadge(a.querySelector('.badge'), loadIcon(a.dataset.key)));
-  }
-  paintAll();
 
-  /* 아이콘 동기화: 구글 시트 '아이콘' 탭 (빈 값 = 기본 아이콘으로 되돌림) */
+  // 페이지에 적힌 기본 버튼들을 읽어 둠
+  const ROWS={};
+  document.querySelectorAll('.links[data-row]').forEach(box=>{
+    ROWS[box.dataset.row]={box, defaults:[...box.querySelectorAll('.link')].map(a=>({
+      key:a.dataset.key, name:a.querySelector('.name').textContent, href:a.getAttribute('href'),
+      bg:a.querySelector('.badge').dataset.bg, letter:a.querySelector('.badge').dataset.letter }))};
+  });
+  const rowState=r=>{ const o=loadJSON('row-'+r)||{}; return {hidden:o.hidden||[], added:o.added||[]}; };
+  function rowItems(r){
+    const st=rowState(r), out=[];
+    ROWS[r].defaults.forEach(d=>{
+      if(st.hidden.includes(d.key)) return;
+      const o=loadJSON('lbl-'+d.key)||{};
+      out.push({key:d.key, name:o.name||d.name, href:o.href||d.href, bg:d.bg, letter:d.letter, custom:false, def:d});
+    });
+    st.added.forEach((a,i)=>{
+      const h=[...a.key].reduce((x,c)=>x+c.charCodeAt(0),0);
+      out.push({key:a.key, name:a.name, href:a.href, bg:PALETTE[h%PALETTE.length], letter:(a.name.trim()[0]||'?').toUpperCase(), custom:true});
+    });
+    return out;
+  }
+  function layoutRow(box){
+    const n=box.children.length||1, w=box.clientWidth||900;
+    const minW=w<600?140:190;   // 칸 하나 최소 너비 (휴대폰 140px, PC 190px)
+    const maxCols=Math.max(1,Math.floor((w+12)/(minW+12)));
+    const lines=Math.ceil(n/maxCols), cols=Math.ceil(n/lines);
+    box.style.gridTemplateColumns='repeat('+cols+',minmax(0,1fr))';
+  }
+  function renderRow(r){
+    const {box}=ROWS[r]; box.innerHTML='';
+    rowItems(r).forEach(it=>{
+      const a=document.createElement('a'); a.className='link'; a.dataset.key=it.key; a.dataset.row=r;
+      a.href=it.href; a.target='_blank'; a.rel='noopener noreferrer';
+      const b=document.createElement('span'); b.className='badge'; b.dataset.bg=it.bg; b.dataset.letter=it.letter;
+      const nm=document.createElement('span'); nm.className='name'; nm.textContent=it.name;
+      a.appendChild(b); a.appendChild(nm); box.appendChild(a);
+      paintBadge(b, loadJSON(it.key));
+    });
+    if(document.body.classList.contains('editing')){
+      const add=document.createElement('button'); add.type='button'; add.className='add-tile'; add.dataset.row=r; add.textContent='+ 버튼 추가';
+      box.appendChild(add);
+    }
+    // 삭제한 기본 버튼 되살리기
+    let rs=box.parentElement.querySelector('.row-restore[data-row="'+r+'"]');
+    if(!rs){ rs=document.createElement('button'); rs.type='button'; rs.className='row-restore'; rs.dataset.row=r; box.after(rs); }
+    const hid=rowState(r).hidden.filter(k=>ROWS[r].defaults.some(d=>d.key===k));
+    rs.classList.toggle('has',hid.length>0); rs.textContent='삭제한 기본 버튼 '+hid.length+'개 되살리기';
+    layoutRow(box);
+  }
+  function renderAll(){ Object.keys(ROWS).forEach(renderRow); paintSections(); }
+  function paintSections(){
+    document.querySelectorAll('h2[data-sec]').forEach(h=>{
+      if(!h.dataset.def) h.dataset.def=h.textContent;
+      if(document.activeElement===h) return;
+      const o=loadJSON('sec-'+h.dataset.sec); h.textContent=(o&&o.title)||h.dataset.def;
+    });
+  }
+  renderAll();
+  let rzT; window.addEventListener('resize',()=>{ clearTimeout(rzT); rzT=setTimeout(()=>Object.values(ROWS).forEach(x=>layoutRow(x.box)),100); });
+
+  /* 동기화 */
   const syncOn=()=>!!(SYNC_URL&&key());
   async function pushIcon(name,data){
     if(!syncOn()) return false;
     try{ const r=await call({action:'icon_save',name:name,data:data}); return !!(r&&r.ok); }catch(e){ return false; }
   }
+  function syncNames(){
+    const n=[];
+    Object.keys(ROWS).forEach(r=>{
+      n.push('row-'+r);
+      ROWS[r].defaults.forEach(d=>n.push(d.key,'lbl-'+d.key));
+      rowState(r).added.forEach(a=>n.push(a.key));
+    });
+    document.querySelectorAll('h2[data-sec]').forEach(h=>n.push('sec-'+h.dataset.sec));
+    return n;
+  }
   function applyServerIcons(icons){
     if(!icons) return;
-    document.querySelectorAll('.link').forEach(a=>{
-      const k=a.dataset.key;
-      if(Object.prototype.hasOwnProperty.call(icons,k)){
-        if(icons[k]) store.set(iconKey(k),icons[k]); else store.del(iconKey(k));
-      }else{
-        const local=store.get(iconKey(k));
-        if(local) pushIcon(k,local);   // 이 기기에만 있던 아이콘을 처음 한 번 올림
-      }
+    const has=k=>Object.prototype.hasOwnProperty.call(icons,k);
+    // 줄 구성(row-*)을 먼저 맞춘 뒤, 추가된 버튼의 아이콘까지 포함해 나머지를 맞춤
+    Object.keys(ROWS).forEach(r=>{ const k='row-'+r; if(has(k)){ if(icons[k]) store.set(iconKey(k),icons[k]); else store.del(iconKey(k)); } });
+    syncNames().forEach(k=>{
+      if(has(k)){ if(icons[k]) store.set(iconKey(k),icons[k]); else store.del(iconKey(k)); }
+      else { const local=store.get(iconKey(k)); if(local) pushIcon(k,local); }   // 이 기기에만 있던 설정을 처음 한 번 올림
     });
-    paintAll();
+    renderAll();
   }
+  async function saveSetting(name,data,msgEl){
+    if(data) store.set(iconKey(name),data); else store.del(iconKey(name));
+    if(!msgEl){ pushIcon(name,data); return; }
+    if(!syncOn()){ msgEl.textContent='이 기기에만 저장됐어요. (동기화 연결 시 다른 기기에도 반영)'; return; }
+    msgEl.textContent='다른 기기에도 저장 중…';
+    msgEl.textContent=(await pushIcon(name,data)) ? '모든 기기에 저장됐어요.' : '다른 기기 저장에 실패했어요. 이 기기에는 저장됐어요.';
+  }
+  function saveRow(r,st){ saveSetting('row-'+r, (st.hidden.length||st.added.length)?JSON.stringify(st):'', null); }
 
   /* 편집 모드 */
   const toggle=document.getElementById('editToggle');
   toggle.addEventListener('click',()=>{
     const on=document.body.classList.toggle('editing');
-    toggle.textContent=on?'완료':'아이콘 바꾸기';
+    toggle.textContent=on?'완료':'편집';
+    document.querySelectorAll('h2[data-sec]').forEach(h=>{ if(on) h.setAttribute('contenteditable','plaintext-only'); else h.removeAttribute('contenteditable'); });
+    renderAll();
   });
 
   /* 편집 창 */
   const bg=document.getElementById('modalBg'), preview=document.getElementById('mPreview'),
         fileIn=document.getElementById('mFile'), textIn=document.getElementById('mText'),
-        msg=document.getElementById('mMsg');
-  let current=null; // {key, badge, name}
+        msg=document.getElementById('mMsg'), nameIn=document.getElementById('mName'),
+        hrefIn=document.getElementById('mHref'), labelMsg=document.getElementById('mLabelMsg'),
+        iconArea=document.getElementById('mIconArea'), delBtn=document.getElementById('mDelete'),
+        resetBtn=document.getElementById('mReset'), titleEl=document.getElementById('mTitle');
+  let current=null;   // {row, key|null(새 버튼), item}
 
-  document.querySelectorAll('.link').forEach(a=>{
-    a.addEventListener('click',e=>{
+  function openModal(row,item){
+    current={row, key:item?item.key:null, item};
+    nameIn.value=item?item.name:''; hrefIn.value=item?item.href:'https://';
+    titleEl.textContent=item?item.name+' 편집':'새 버튼 추가';
+    document.getElementById('mSaveLabel').textContent=item?'이름·링크 저장':'추가';
+    iconArea.style.display=item?'':'none';
+    resetBtn.style.display=(item&&!item.custom)?'':'none';
+    delBtn.style.display=item?'':'none'; delBtn.textContent='삭제'; delBtn.dataset.armed='';
+    textIn.value=''; msg.textContent=''; labelMsg.textContent='';
+    if(item){ preview.dataset.bg=item.bg; preview.dataset.letter=item.letter; paintBadge(preview, loadJSON(item.key)); }
+    bg.classList.add('open'); setTimeout(()=>nameIn.focus(),50);
+  }
+  function closeModal(){ bg.classList.remove('open'); current=null; }
+  const findItem=(r,k)=>rowItems(r).find(x=>x.key===k);
+
+  document.addEventListener('click',e=>{
+    const a=e.target.closest('.link[data-row]');
+    if(a && document.body.classList.contains('editing')){ e.preventDefault(); openModal(a.dataset.row, findItem(a.dataset.row,a.dataset.key)); return; }
+    const add=e.target.closest('.add-tile'); if(add){ openModal(add.dataset.row,null); return; }
+    const rs=e.target.closest('.row-restore');
+    if(rs){ const r=rs.dataset.row, st=rowState(r); st.hidden=[]; saveRow(r,st); renderRow(r); }
+  });
+
+  document.getElementById('mSaveLabel').addEventListener('click',()=>{
+    const nm=nameIn.value.trim(), hr=hrefIn.value.trim(), r=current.row;
+    if(!nm){ labelMsg.textContent='버튼 이름을 입력하세요.'; return; }
+    if(!/^https?:\/\/\S+\.\S+/i.test(hr)){ labelMsg.textContent='링크는 https:// 로 시작하는 주소여야 해요.'; return; }
+    const st=rowState(r);
+    if(!current.item){                       // 새 버튼
+      const k='c'+Date.now().toString(36);
+      st.added.push({key:k,name:nm.slice(0,30),href:hr}); saveRow(r,st); renderRow(r);
+      const it=findItem(r,k); openModal(r,it); labelMsg.textContent='추가됐어요. 아래에서 아이콘도 바꿀 수 있어요.';
+      return;
+    }
+    if(current.item.custom){                 // 내가 추가한 버튼
+      const a=st.added.find(x=>x.key===current.key); a.name=nm.slice(0,30); a.href=hr;
+      saveSetting('row-'+r, JSON.stringify(st), labelMsg);
+    }else{                                   // 기본 버튼
+      const d=current.item.def, same=(nm===d.name&&hr===d.href);
+      saveSetting('lbl-'+current.key, same?'':JSON.stringify({name:nm,href:hr}), labelMsg);
+    }
+    renderRow(r); current.item=findItem(r,current.key); titleEl.textContent=nm+' 편집';
+  });
+  [nameIn,hrefIn].forEach(el=>el.addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('mSaveLabel').click(); }));
+
+  delBtn.addEventListener('click',()=>{
+    if(!delBtn.dataset.armed){ delBtn.dataset.armed='1'; delBtn.textContent='한 번 더 누르면 삭제'; return; }
+    const r=current.row, k=current.key, st=rowState(r);
+    if(current.item.custom){ st.added=st.added.filter(x=>x.key!==k); saveSetting(k,'',null); }
+    else if(!st.hidden.includes(k)) st.hidden.push(k);
+    saveRow(r,st); renderRow(r); closeModal();
+  });
+
+  document.querySelectorAll('h2[data-sec]').forEach(h=>{
+    h.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); h.blur(); } });
+    h.addEventListener('blur',()=>{
       if(!document.body.classList.contains('editing')) return;
-      e.preventDefault();
-      current={key:a.dataset.key, badge:a.querySelector('.badge')};
-      preview.dataset.bg=current.badge.dataset.bg; preview.dataset.letter=current.badge.dataset.letter;
-      paintBadge(preview, loadIcon(current.key));
-      document.getElementById('mTitle').textContent=a.querySelector('.name').textContent+' 아이콘 바꾸기';
-      textIn.value=''; msg.textContent='';
-      bg.classList.add('open');
+      const t=h.textContent.replace(/\s+/g,' ').trim().slice(0,30);
+      saveSetting('sec-'+h.dataset.sec, (t&&t!==h.dataset.def)?JSON.stringify({title:t}):'', null);
+      if(!t) h.textContent=h.dataset.def;
     });
   });
 
+  /* 아이콘 바꾸기 */
   async function syncIconMsg(name,data){
     if(!syncOn()){ msg.textContent='이 기기에만 저장됐어요. (동기화 연결 시 다른 기기에도 반영)'; return; }
     msg.textContent='다른 기기에도 저장 중…';
-    const ok=await pushIcon(name,data);
-    msg.textContent= ok ? '모든 기기에 저장됐어요.' : '다른 기기 저장에 실패했어요. 이 기기에는 저장됐어요.';
+    msg.textContent=(await pushIcon(name,data)) ? '모든 기기에 저장됐어요.' : '다른 기기 저장에 실패했어요. 이 기기에는 저장됐어요.';
   }
   function saveIcon(data){
     const name=current.key, json=JSON.stringify(data);
-    const ok=store.set(iconKey(name), json);
-    paintBadge(preview,data); paintBadge(current.badge,data);
-    if(!ok){ msg.textContent='이 화면에서는 저장되지 않아 새로고침하면 원래대로 돌아가요.'; return; }
+    if(!store.set(iconKey(name), json)){ msg.textContent='이 화면에서는 저장되지 않아 새로고침하면 원래대로 돌아가요.'; return; }
+    paintBadge(preview,data); renderRow(current.row);
     syncIconMsg(name,json);
   }
-
   document.getElementById('mPick').addEventListener('click',()=>fileIn.click());
   fileIn.addEventListener('change',()=>{
     const f=fileIn.files[0]; fileIn.value='';
@@ -505,8 +664,7 @@
     if(!f.type.startsWith('image/')){ msg.textContent='이미지 파일만 쓸 수 있어요.'; return; }
     const url=URL.createObjectURL(f), img=new Image();
     img.onload=()=>{
-      // 가운데를 정사각형으로 잘라 작게 줄여서 저장
-      const S=96, c=document.createElement('canvas'); c.width=c.height=S;
+      const S=96, c=document.createElement('canvas'); c.width=c.height=S;   // 가운데를 정사각형으로 잘라 작게 줄임
       const s=Math.min(img.width,img.height), sx=(img.width-s)/2, sy=(img.height-s)/2;
       c.getContext('2d').drawImage(img,sx,sy,s,s,0,0,S,S);
       URL.revokeObjectURL(url);
@@ -517,7 +675,6 @@
     img.onerror=()=>{ URL.revokeObjectURL(url); msg.textContent='이미지를 읽지 못했어요. 다른 파일로 해 보세요.'; };
     img.src=url;
   });
-
   document.getElementById('mApplyText').addEventListener('click',()=>{
     const v=textIn.value.trim();
     if(!v){ msg.textContent='글자나 이모지를 입력하세요.'; return; }
@@ -525,13 +682,12 @@
   });
   textIn.addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('mApplyText').click(); });
 
-  document.getElementById('mReset').addEventListener('click',()=>{
-    const name=current.key;
-    store.del(iconKey(name));
-    paintBadge(preview,null); paintBadge(current.badge,null); msg.textContent='';
-    syncIconMsg(name,'');
+  resetBtn.addEventListener('click',()=>{   // 기본 버튼: 이름·링크·아이콘을 처음 상태로
+    const k=current.key, r=current.row;
+    store.del(iconKey(k)); syncIconMsg(k,'');
+    saveSetting('lbl-'+k,'',null);
+    renderRow(r); const it=findItem(r,k); openModal(r,it); msg.textContent='기본으로 되돌렸어요.';
   });
-  function closeModal(){ bg.classList.remove('open'); current=null; }
   document.getElementById('mClose').addEventListener('click',closeModal);
   bg.addEventListener('click',e=>{ if(e.target===bg) closeModal(); });
   document.addEventListener('keydown',e=>{ if(e.key==='Escape' && bg.classList.contains('open')) closeModal(); });
